@@ -5,39 +5,67 @@ fn main() {
         .filter_map(|line| is_safe_part_1(line).then_some(()))
         .count();
     println!("Part 1: {}", safe);
+    let safe = input
+        .lines()
+        .filter_map(|line| is_safe_part_2(line).then_some(()))
+        .count();
+    println!("Part 2: {}", safe);
 }
 
-fn is_safe_part_1(report: &str) -> bool {
-    report
-        .split_whitespace()
-        .map(|s| s.parse::<i32>().unwrap())
-        .fold((None, None, Ok(())), |(prev2, prev1, result), n| {
+fn safe(levels: &[i32]) -> bool {
+    levels
+        .iter()
+        .fold((None, None, 0), |(prev2, prev1, result), n| {
             match (prev2, prev1, result) {
-                (Some(prev2), Some(prev1), Ok(())) => {
+                (Some(prev2), Some(prev1), fails) => {
                     if (prev1 > prev2 && (n - prev1 == 1 || n - prev1 == 2 || n - prev1 == 3))
                         || (prev1 < prev2
                             && (n - prev1 == -1 || n - prev1 == -2 || n - prev1 == -3))
                     {
-                        (Some(prev1), Some(n), Ok(()))
+                        (Some(prev1), Some(n), fails)
                     } else {
-                        (Some(prev1), Some(n), Err(()))
+                        (Some(prev1), Some(n), fails + 1)
                     }
                 }
-                (None, None, Ok(())) => (None, Some(n), Ok(())),
-                (None, Some(prev1), Ok(())) => {
+                (None, None, fails) => (None, Some(n), fails),
+                (None, Some(prev1), fails) => {
                     if (n - prev1 == 1 || n - prev1 == 2 || n - prev1 == 3)
                         || (n - prev1 == -1 || n - prev1 == -2 || n - prev1 == -3)
                     {
-                        (Some(prev1), Some(n), Ok(()))
+                        (Some(prev1), Some(n), fails)
                     } else {
-                        (Some(prev1), Some(n), Err(()))
+                        (Some(prev1), Some(n), fails + 1)
                     }
                 }
-                _ => (prev2, prev1, Err(())),
+                _ => (prev2, prev1, result),
             }
         })
         .2
-        .is_ok()
+        == 0
+}
+
+fn is_safe_part_1(report: &str) -> bool {
+    safe(
+        &report
+            .split_whitespace()
+            .map(|s| s.parse::<i32>().unwrap())
+            .collect::<Vec<_>>(),
+    )
+}
+
+fn is_safe_part_2(report: &str) -> bool {
+    let numbers: Vec<_> = report
+        .split_whitespace()
+        .map(|s| s.parse::<i32>().unwrap())
+        .collect();
+    for skip in 0..numbers.len() {
+        let mut to_check = numbers.clone();
+        to_check.remove(skip);
+        if safe(&to_check) {
+            return true;
+        }
+    }
+    false
 }
 
 #[cfg(test)]
@@ -45,44 +73,44 @@ mod tests {
     use super::*;
 
     #[test]
-    fn first_example_is_safe_part_1() {
+    fn first_example() {
         let example = "7 6 4 2 1";
-        let safe: bool = is_safe_part_1(example);
-        assert!(safe);
+        assert!(is_safe_part_1(example));
+        assert!(is_safe_part_2(example));
     }
 
     #[test]
-    fn second_example_is_safe_part_1() {
+    fn second_example() {
         let example = "1 2 7 8 9";
-        let safe: bool = is_safe_part_1(example);
-        assert!(!safe);
+        assert!(!is_safe_part_1(example));
+        assert!(!is_safe_part_2(example));
     }
 
     #[test]
-    fn third_example_is_safe_part_1() {
+    fn third_example() {
         let example = "9 7 6 2 1";
-        let safe: bool = is_safe_part_1(example);
-        assert!(!safe);
+        assert!(!is_safe_part_1(example));
+        assert!(!is_safe_part_2(example));
     }
 
     #[test]
-    fn fourth_example_is_safe_part_1() {
+    fn fourth_example() {
         let example = "1 3 2 4 5";
-        let safe: bool = is_safe_part_1(example);
-        assert!(!safe);
+        assert!(!is_safe_part_1(example));
+        assert!(is_safe_part_2(example));
     }
 
     #[test]
-    fn fifth_example_is_safe_part_1() {
+    fn fifth_example() {
         let example = "8 6 4 4 1";
-        let safe: bool = is_safe_part_1(example);
-        assert!(!safe);
+        assert!(!is_safe_part_1(example));
+        assert!(is_safe_part_2(example));
     }
 
     #[test]
-    fn sixth_example_is_safe_part_1() {
+    fn sixth_example() {
         let example = "1 3 6 7 9";
-        let safe: bool = is_safe_part_1(example);
-        assert!(safe);
+        assert!(is_safe_part_1(example));
+        assert!(is_safe_part_2(example));
     }
 }
